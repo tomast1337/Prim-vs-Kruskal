@@ -10,10 +10,9 @@ Seguem abaixo as funcionalidades que precisam ser oferecidas pela biblioteca na 
 
 Nota: o enunciado deste trabalho foi adaptado do material de aulas dos professores Celina Figueiredo e Ricardo Marroquim.
 
-![figura1.png](attachment:figura1.png)
+![figura1](https://user-images.githubusercontent.com/15125899/236040142-9d1432e5-f0e4-4945-8227-b5f8d5b17ad2.png)
 
-![figura2.png](attachment:figura2.png)
-
+![figura2](https://user-images.githubusercontent.com/15125899/236040254-81d71389-aecc-409d-9c87-801435ca629a.png)
 
 Nota: o enunciado deste trabalho foi adaptado do material de aulas dos professores Celina Figueiredo e Ricardo Marroquim.
 
@@ -48,7 +47,7 @@ O que segue são as funcionalidades que precisam ser implementadas pela sua bibl
 
 4. **Distância média**. Sua biblioteca deve encontrar a distância média de um dado grafo. A distância média de um grafo é a média das distâncias entre todos os pares (não-ordenados) de vértices do grafo. Ou seja, se d(u, v) é a distância entre os vértices u e v, então a fórmula para o cálculo da distância média de um grafo é a apresentada abaixo. Note que, se não há caminho entre u e v, ou seja, d(u, v) não é bem definida, então este par de vértices não deve ser considerado no cálculo da média.
 
-![formula.png](attachment:formula.png)
+![Formula](https://user-images.githubusercontent.com/15125899/236040551-c07cf60c-dc08-4ded-bd7c-9474b5b6f014.png)
 
 ## Estudo de caso
 
