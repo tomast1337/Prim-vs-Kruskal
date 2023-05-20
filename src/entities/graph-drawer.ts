@@ -4,21 +4,26 @@ import { Graph } from "./graph";
 import { GNode } from "./node";
 import { DOMImplementation, XMLSerializer } from "xmldom";
 import { RoughSVG } from "roughjs/bin/svg";
-import { create } from "random-seed";
-
-const rand = create("1");
+import { RandomSeed, create } from "random-seed";
 
 export class GraphDrawer<T> {
   private svgNode: SVGElement;
   private roughSVG: RoughSVG;
   private document: Document;
+  private rand: RandomSeed;
 
   private nodeRadius: number = 20;
   private edgeColor: string = "#333333";
   private width: number;
   private height: number;
 
-  constructor(width: number = 500, height: number = 500) {
+  private nodePositions: Map<GNode<T>, [number, number]> = new Map();
+
+  constructor(
+    width: number = 800,
+    height: number = 600,
+    seed: string = "seed"
+  ) {
     const document = new DOMImplementation().createDocument(
       "http://www.w3.org/1999/xhtml",
       "html",
@@ -35,6 +40,7 @@ export class GraphDrawer<T> {
     svgNode.setAttribute("viewBox", `0 0 ${width} ${height}`);
     document.documentElement.appendChild(svgNode);
 
+    this.rand = create(seed);
     this.document = document;
     this.roughSVG = rough.svg(svgNode);
     this.svgNode = svgNode;
@@ -43,16 +49,31 @@ export class GraphDrawer<T> {
   }
 
   private randomColor(): string {
-    const r = Math.floor(rand(100)) + 155;
-    const g = Math.floor(rand(100)) + 155;
-    const b = Math.floor(rand(100)) + 155;
+    const r = Math.floor(this.rand(100)) + 155;
+    const g = Math.floor(this.rand(100)) + 155;
+    const b = Math.floor(this.rand(100)) + 155;
 
     return `rgb(${r},${g},${b})`;
   }
 
   private randomPosition(): [number, number] {
-    const x = rand.floatBetween(0, this.width - this.nodeRadius * 2) + this.nodeRadius;
-    const y = rand.floatBetween(0, this.height - this.nodeRadius * 2) + this.nodeRadius;
+    const x = this.rand.floatBetween(
+      this.nodeRadius * 4,
+      this.width - this.nodeRadius * 4
+    );
+    const y = this.rand.floatBetween(
+      this.nodeRadius * 4,
+      this.height - this.nodeRadius * 4
+    );
+    // check if the position is already taken
+    const taken = Array.from(this.nodePositions.values()).some(
+      ([x2, y2]) =>
+        Math.sqrt(Math.pow(x - x2, 2) + Math.pow(y - y2, 2)) <
+        this.nodeRadius * 4
+    );
+    if (taken) {
+      return this.randomPosition();
+    }
     return [x, y];
   }
 
@@ -79,6 +100,20 @@ export class GraphDrawer<T> {
       this.drawNode(node, x, y);
     });
 
+    // draw a border
+    const border = this.roughSVG.rectangle(
+      this.nodeRadius * 2,
+      this.nodeRadius * 2,
+      this.width - this.nodeRadius * 4,
+      this.height - this.nodeRadius * 4,
+      {
+        stroke: this.edgeColor,
+        strokeWidth: 1,
+        roughness: 5,
+      }
+    );
+    this.svgNode.appendChild(border);
+
     return this;
   }
 
@@ -87,15 +122,15 @@ export class GraphDrawer<T> {
     const circle = this.roughSVG.circle(x, y, this.nodeRadius * 2, {
       fill: this.randomColor(),
       fillStyle: "solid",
-      strokeWidth: 1,
-      roughness: 1,
+      strokeWidth: 3,
+      roughness: 2,
     });
     this.svgNode.appendChild(circle);
 
     // draw text
     const elem = this.document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "text"
+      "http://www.w3.org/2000/svg",
+      "text"
     );
     elem.setAttribute("x", x.toString());
     elem.setAttribute("y", y.toString());
@@ -112,8 +147,8 @@ export class GraphDrawer<T> {
     // Draw edges
     const line = this.roughSVG.line(x, y, x2, y2, {
       stroke: this.edgeColor,
-      strokeWidth: 1,
-      roughness: 1,
+      strokeWidth: 2,
+      roughness: 0,
     });
     this.svgNode.appendChild(line);
   }
@@ -133,25 +168,24 @@ export class GraphDrawer<T> {
 export const example = () => {
   // Example usage
   const graph = new Graph<string>();
+  const seed = process.cpuUsage().user;
+  const rand = create(seed.toString());
 
   // Add nodes
   Array.from(Array(10).keys()).forEach((i) => {
-    graph.addNode(i.toString());
+    graph.addNode(rand(100).toString());
   });
 
   // Add edges
-  Array.from(Array(10).keys()).forEach((i) => {
-    const node = graph.getNodes()[i];
-    const neighbor = graph.getNodes()[(i + 1) % 10];
-    graph.addEdge(node.data, neighbor.data);
+  Array.from(Array(8).keys()).forEach((i) => {
+    try {
+      const node = graph.getNodes()[i];
+      const randNeighbor = graph.getNodes()[rand(graph.getNodes().length)];
+      graph.addEdge(node.data, randNeighbor.data);
+    } catch (e) {
+      // pass
+    }
   });
-
-  Array.from(Array(5).keys()).forEach((i) => {
-    const node = graph.getNodes()[i];
-    const neighbor = graph.getNodes()[(i + 5) % 10];
-    graph.addEdge(node.data, neighbor.data);
-  });
-
   // Draw graph
   new GraphDrawer<string>().drawGraph(graph).save("graph.svg");
 };
