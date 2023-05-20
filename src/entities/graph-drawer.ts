@@ -1,87 +1,132 @@
-import { SVG, Svg, registerWindow } from "@svgdotjs/svg.js";
+import rough from "roughjs";
 import * as fs from "fs";
 import { Graph } from "./graph";
 import { GNode } from "./node";
+import { DOMImplementation, XMLSerializer } from "xmldom";
+import { RoughSVG } from "roughjs/bin/svg";
+import { create } from "random-seed";
 
-const window = require("svgdom");
-console.log(window.document);
+const rand = create("1");
+
 export class GraphDrawer<T> {
-  private canvas: any;
+  private svgNode: SVGElement;
+  private roughSVG: RoughSVG;
+  private document: Document;
+
   private nodeRadius: number = 20;
   private edgeColor: string = "#333333";
-  private backgroundColor: string = "#ffffff";
   private width: number;
   private height: number;
 
-  constructor(
-    width: number = 500,
-    height: number = 500,
-    backgroundColor: string = "#ffffff"
-  ) {
-    registerWindow(window, window.document);
-    const document = window.document;
+  constructor(width: number = 500, height: number = 500) {
+    const document = new DOMImplementation().createDocument(
+      "http://www.w3.org/1999/xhtml",
+      "html",
+      null
+    );
+    const svgNode = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "svg"
+    );
+    svgNode.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    svgNode.setAttribute("version", "1.1");
+    svgNode.setAttribute("width", width.toString());
+    svgNode.setAttribute("height", height.toString());
+    svgNode.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    document.documentElement.appendChild(svgNode);
 
-    this.canvas = SVG(document.documentElement);
-    this.canvas.size(width, height);
+    this.document = document;
+    this.roughSVG = rough.svg(svgNode);
+    this.svgNode = svgNode;
     this.width = width;
     this.height = height;
-    this.backgroundColor = backgroundColor;
   }
 
   private randomColor(): string {
-    const r = Math.floor(Math.random() * 100) + 155;
-    const g = Math.floor(Math.random() * 100) + 155;
-    const b = Math.floor(Math.random() * 100) + 155;
+    const r = Math.floor(rand(100)) + 155;
+    const g = Math.floor(rand(100)) + 155;
+    const b = Math.floor(rand(100)) + 155;
 
     return `rgb(${r},${g},${b})`;
   }
 
   private randomPosition(): [number, number] {
-    const x = Math.random() * this.width;
-    const y = Math.random() * this.height;
+    const x = rand.floatBetween(0, this.width - this.nodeRadius * 2) + this.nodeRadius;
+    const y = rand.floatBetween(0, this.height - this.nodeRadius * 2) + this.nodeRadius;
     return [x, y];
   }
 
   public drawGraph(graph: Graph<T>): GraphDrawer<T> {
+    // draw nodes
+    const nodePositions: Map<GNode<T>, [number, number]> = new Map();
     graph.getNodes().forEach((node) => {
       const [x, y] = this.randomPosition();
-      this.drawNode(node, x, y);
-      this.drawEdges(node, x, y);
+      nodePositions.set(node, [x, y]);
     });
+
+    // draw edges
+    graph.getNodes().forEach((node) => {
+      const [x, y] = nodePositions.get(node) || [0, 0];
+      node.getNeighbors().forEach((neighbor) => {
+        const [x2, y2] = nodePositions.get(neighbor) || [0, 0];
+        this.drawEdges(x, y, x2, y2);
+      });
+    });
+
+    // draw nodes
+    graph.getNodes().forEach((node) => {
+      const [x, y] = nodePositions.get(node) || [0, 0];
+      this.drawNode(node, x, y);
+    });
+
     return this;
   }
 
-  public save(fileName: string) {
-    // get inner svg
-    const svg = this.canvas.svg();
-    // write to file
-    fs.writeFileSync(fileName, svg);
-  }
-
   private drawNode(node: GNode<T>, x: number, y: number) {
-    const circle = this.canvas.circle(this.nodeRadius * 2).center(x, y);
-    circle.fill(this.randomColor()).stroke({ width: 1, color: "#333333" });
-    const text = this.canvas
-      .text(node.data ? node.data.toString() : "")
-      .center(x, y);
-    text.font({ size: 12, weight: "bold" });
+    // Draw node, a circle with text inside
+    const circle = this.roughSVG.circle(x, y, this.nodeRadius * 2, {
+      fill: this.randomColor(),
+      fillStyle: "solid",
+      strokeWidth: 1,
+      roughness: 1,
+    });
+    this.svgNode.appendChild(circle);
+
+    // draw text
+    const elem = this.document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "text"
+    );
+    elem.setAttribute("x", x.toString());
+    elem.setAttribute("y", y.toString());
+    elem.setAttribute("text-anchor", "middle");
+    elem.setAttribute("alignment-baseline", "middle");
+    elem.setAttribute("font-size", "20px");
+    elem.setAttribute("font-family", "sans-serif");
+    elem.setAttribute("fill", "black");
+    elem.textContent = node.data as string;
+    this.svgNode.appendChild(elem);
   }
 
-  private drawEdges(node: GNode<T>, x: number, y: number) {
-    const neighbors = node.getNeighbors();
-    neighbors.forEach((neighbor) => {
-      const weight = node.getWeight(neighbor) || 0;
-      const [neighborX, neighborY] = this.randomPosition();
-
-      const line = this.canvas.line(x, y, neighborX, neighborY);
-
-      line.stroke({ width: 1, color: this.randomColor() });
-
-      const textX = (x + neighborX) / 2;
-      const textY = (y + neighborY) / 2;
-      const text = this.canvas.text(weight.toString()).center(textX, textY);
-      text.font({ size: 10 });
+  private drawEdges(x: number, y: number, x2: number, y2: number) {
+    // Draw edges
+    const line = this.roughSVG.line(x, y, x2, y2, {
+      stroke: this.edgeColor,
+      strokeWidth: 1,
+      roughness: 1,
     });
+    this.svgNode.appendChild(line);
+  }
+
+  public save(fileName: string) {
+    // write to file
+    fs.writeFileSync(fileName, this.getStringData());
+  }
+  public getStringData(): string {
+    // write to string
+    const xmlSerializer = new XMLSerializer();
+    let xml = xmlSerializer.serializeToString(this.svgNode);
+    return xml;
   }
 }
 
@@ -90,16 +135,23 @@ export const example = () => {
   const graph = new Graph<string>();
 
   // Add nodes
-  graph.addNode("A");
-  graph.addNode("B");
-  graph.addNode("C");
+  Array.from(Array(10).keys()).forEach((i) => {
+    graph.addNode(i.toString());
+  });
 
-  // Add weighted edges
-  graph.addEdge("A", "B", 4);
-  graph.addEdge("B", "C", 2);
-  graph.addEdge("C", "A", 3);
+  // Add edges
+  Array.from(Array(10).keys()).forEach((i) => {
+    const node = graph.getNodes()[i];
+    const neighbor = graph.getNodes()[(i + 1) % 10];
+    graph.addEdge(node.data, neighbor.data);
+  });
 
-  const graphDrawer = new GraphDrawer<string>()
-    .drawGraph(graph)
-    .save("graph.svg");
+  Array.from(Array(5).keys()).forEach((i) => {
+    const node = graph.getNodes()[i];
+    const neighbor = graph.getNodes()[(i + 5) % 10];
+    graph.addEdge(node.data, neighbor.data);
+  });
+
+  // Draw graph
+  new GraphDrawer<string>().drawGraph(graph).save("graph.svg");
 };

@@ -21,7 +21,7 @@ if (args.includes("-debug")) {
   exampleEdge();
   exampleNode();
   exampleGraph();
-  //exampleGraphDrawer();
+  exampleGraphDrawer();
   exampleGraphLoader();
   exampleKruskalAlgorithm();
   examplePrimAlgorithm();
@@ -40,3 +40,14 @@ if (args.includes("-file")) {
   }
   process.exit(0);
 }
+
+//else print help
+console.log(`
+Usage: node index.js [options]
+
+Options:
+    -debug      Run example code
+    -file       Provide file path to load graph from
+    -help       Print help
+`);
+process.exit(0);
