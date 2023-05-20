@@ -1,0 +1,20 @@
+{
+    "name": "trabalho-pratico-grafos",
+    "version": "1.0.0",
+    "main": "src/index.ts",
+    "repository": "https://github.com/tomast1337/Trabalho-Pr-tico-Grafos.git",
+    "author": "tomast1337 <vycasnicolas@gmail.com>",
+    "license": "MIT",
+    "scripts": {
+        "start": "ts-node src/index.ts"
+    },
+    "devDependencies": {
+        "@types/node": "^20.2.1",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.0.4"
+    },
+    "dependencies": {
+        "@svgdotjs/svg.js": "^3.1.2",
+        "svgdom": "^0.1.14"
+    }
+}
