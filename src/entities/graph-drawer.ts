@@ -5,6 +5,7 @@ import { GNode } from "./node";
 import { DOMImplementation, XMLSerializer } from "xmldom";
 import { RoughSVG } from "roughjs/bin/svg";
 import { RandomSeed, create } from "random-seed";
+import { Edge } from "./edge";
 
 export class GraphDrawer<T> {
   private svgNode: SVGElement;
@@ -17,7 +18,7 @@ export class GraphDrawer<T> {
   private width: number;
   private height: number;
 
-  private nodePositions: Map<GNode<T>, [number, number]> = new Map();
+  private nodePositions: Map<T, [number, number]> = new Map();
 
   constructor(
     width: number = 800,
@@ -79,24 +80,36 @@ export class GraphDrawer<T> {
 
   public drawGraph(graph: Graph<T>): GraphDrawer<T> {
     // draw nodes
-    const nodePositions: Map<GNode<T>, [number, number]> = new Map();
     graph.getNodes().forEach((node) => {
       const [x, y] = this.randomPosition();
-      nodePositions.set(node, [x, y]);
+      this.nodePositions.set(node.data, [x, y]);
     });
 
     // draw edges
-    graph.getNodes().forEach((node) => {
-      const [x, y] = nodePositions.get(node) || [0, 0];
-      node.getNeighbors().forEach((neighbor) => {
-        const [x2, y2] = nodePositions.get(neighbor) || [0, 0];
-        this.drawEdges(x, y, x2, y2);
-      });
+    graph.getEdges().forEach((edge) => {
+      const [x1, y1] = this.nodePositions.get(edge.node1.data) || [
+        undefined,
+        undefined,
+      ];
+      const [x2, y2] = this.nodePositions.get(edge.node2.data) || [
+        undefined,
+        undefined,
+      ];
+      if (!x1 || !y1 || !x2 || !y2) {
+        throw new Error("Node position not found");
+      }
+      this.drawEdges(edge, x1, y1, x2, y2);
     });
 
     // draw nodes
     graph.getNodes().forEach((node) => {
-      const [x, y] = nodePositions.get(node) || [0, 0];
+      const [x, y] = this.nodePositions.get(node.data) || [
+        undefined,
+        undefined,
+      ];
+      if (!x || !y) {
+        throw new Error("Node position not found");
+      }
       this.drawNode(node, x, y);
     });
 
@@ -122,8 +135,9 @@ export class GraphDrawer<T> {
     const circle = this.roughSVG.circle(x, y, this.nodeRadius * 2, {
       fill: this.randomColor(),
       fillStyle: "solid",
-      strokeWidth: 3,
+      strokeWidth: 1,
       roughness: 2,
+      hachureAngle: 60,
     });
     this.svgNode.appendChild(circle);
 
@@ -143,14 +157,33 @@ export class GraphDrawer<T> {
     this.svgNode.appendChild(elem);
   }
 
-  private drawEdges(x: number, y: number, x2: number, y2: number) {
+  private drawEdges(
+    edge: Edge<T>,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number
+  ) {
     // Draw edges
-    const line = this.roughSVG.line(x, y, x2, y2, {
-      stroke: this.edgeColor,
+    const line = this.roughSVG.line(x1, y1, x2, y2, {
+      stroke: "black",
       strokeWidth: 2,
-      roughness: 0,
+      roughness: 1,
     });
     this.svgNode.appendChild(line);
+    const elemEd = this.document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "text"
+    );
+    elemEd.setAttribute("x", `${(x1 + x2) / 2}`);
+    elemEd.setAttribute("y", `${(y1 + y2) / 2 + 15}`);
+    elemEd.setAttribute("text-anchor", "middle");
+    elemEd.setAttribute("alignment-baseline", "middle");
+    elemEd.setAttribute("font-size", "20px");
+    elemEd.setAttribute("font-family", "sans-serif");
+    elemEd.setAttribute("fill", "black");
+    elemEd.textContent = edge.weight.toString();
+    this.svgNode.appendChild(elemEd);
   }
 
   public save(fileName: string) {
@@ -172,16 +205,16 @@ export const example = () => {
   const rand = create(seed.toString());
 
   // Add nodes
-  Array.from(Array(10).keys()).forEach((i) => {
+  Array.from(Array(25).keys()).forEach((i) => {
     graph.addNode(rand(100).toString());
   });
 
   // Add edges
-  Array.from(Array(8).keys()).forEach((i) => {
+  Array.from(Array(20).keys()).forEach((i) => {
     try {
       const node = graph.getNodes()[i];
       const randNeighbor = graph.getNodes()[rand(graph.getNodes().length)];
-      graph.addEdge(node.data, randNeighbor.data);
+      graph.addEdge(node.data, randNeighbor.data, rand.intBetween(1.0, 10.0));
     } catch (e) {
       // pass
     }

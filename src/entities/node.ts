@@ -1,6 +1,6 @@
 export class GNode<T> {
-  data: T;
-  neighbors: Map<GNode<T>, number>;
+  public data: T;
+  public neighbors: Map<GNode<T>, number>;
 
   constructor(data: T) {
     this.data = data;

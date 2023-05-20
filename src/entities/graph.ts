@@ -1,4 +1,5 @@
 import { GNode } from "./node";
+import { Edge } from "./edge";
 export class Graph<T> {
   nodes: Map<T, GNode<T>>;
 
@@ -49,6 +50,22 @@ export class Graph<T> {
 
   public getNodes() {
     return Array.from(this.nodes.values());
+  }
+
+  public getEdges(): Edge<T>[] {
+    const edges: Set<Edge<T>> = new Set<Edge<T>>();
+
+    for (const node of this.nodes.values()) {
+      for (const neighbor of node.getNeighbors()) {
+        edges.add({
+          node1: node,
+          node2: neighbor,
+          weight: node.getWeight(neighbor) || 0,
+        });
+      }
+    }
+    const list = Array.from(edges);
+    return list;
   }
 }
 
