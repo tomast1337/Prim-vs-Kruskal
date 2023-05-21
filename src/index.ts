@@ -55,25 +55,34 @@ if (args.includes("-file")) {
   try {
     const loadedGraph = graphLoader.loadFromFile(filePath);
     console.log(`Successfully loaded graph from file ${filePath}`);
+
+    console.log(loadedGraph.edgesString());
+
     let path = `${filePath.split("/")[filePath.split("/").length - 1]}-${
       new Date().toISOString().split("T")[0]
     }.svg`;
     new GraphDrawer<string>(1000, 1000, seed).drawGraph(loadedGraph).save(path);
     console.log(`Saved graph to ${path}`);
 
-    path = "kruskal-" + path;
+    console.log("Kruskal MST:");
     const kruskalAlgorithm = new KruskalAlgorithm<string>();
     const kruskalMST = kruskalAlgorithm.kruskalMST(loadedGraph);
-    new GraphDrawer<string>(1000, 1000, seed).drawGraph(kruskalMST).save(path);
-    console.log(`Saved graph to ${path}`);
+    new GraphDrawer<string>(1000, 1000, seed)
+      .drawGraph(kruskalMST)
+      .save("kruskal-" + path);
+    console.log(kruskalMST.edgesString());
+    console.log(`Saved graph to kruskal-${path}`);
 
-    path = "prim-" + path;
+    console.log("Prim MST:");
     const primAlgorithm = new PrimAlgorithm<string>();
     const primMST = primAlgorithm.primMST(loadedGraph);
-    new GraphDrawer<string>(1000, 1000, seed).drawGraph(primMST).save(path);
-    console.log(`Saved graph to ${path}`);
+    new GraphDrawer<string>(1000, 1000, seed)
+      .drawGraph(primMST)
+      .save("prim-" + path);
+    console.log(primMST.edgesString());
+    console.log(`Saved graph to prim-${path}`);
   } catch (error) {
-    console.log(`Error loading file ${filePath}: ${error}`);
+    console.log(`Error: ${error}`);
     process.exit(1);
   }
   process.exit(0);
