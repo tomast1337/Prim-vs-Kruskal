@@ -8,6 +8,10 @@ export class Graph<T> {
   }
 
   public addNode(data: T) {
+    // check if node already exists
+    if (this.nodes.has(data)) {
+        return;
+    }
     const newNode = new GNode<T>(data);
     this.nodes.set(data, newNode);
   }
@@ -70,6 +74,12 @@ export class Graph<T> {
     }
     const list = Array.from(edges);
     return list;
+  }
+
+  public edgesString(): string {
+    return this.getEdges()
+      .map((edge) => `${edge.node1.data} ${edge.node2.data} ${edge.weight}`)
+      .join("\n");
   }
 }
 
