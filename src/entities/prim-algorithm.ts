@@ -7,6 +7,11 @@ export class PrimAlgorithm<T> {
     const result = new Graph<T>();
     const visited = new Set<GNode<T>>();
 
+    // add all vertices to the new graph
+    for (const node of graph.getNodes()) {
+        result.addNode(node.data);
+    }
+
     // Check if the graph is empty
     if (graph.getNodes().length === 0) {
       return result;
@@ -17,28 +22,26 @@ export class PrimAlgorithm<T> {
     visited.add(startNode);
 
     while (visited.size < graph.getNodes().length) {
-      let minWeight = Infinity;
-      let minEdge: Edge<T> | null = null;
-
-      for (const visitedNode of visited) {
-        const neighbors = visitedNode.getNeighbors();
+      let minimum = Infinity;
+      let nodeA: GNode<T> | null = null;
+      let nodeB: GNode<T> | null = null;
+      for (const node of visited) {
+        const neighbors = node.getNeighbors();
         for (const neighbor of neighbors) {
-          if (!visited.has(neighbor)) {
-            const weight = visitedNode.getWeight(neighbor) || 0;
-            if (weight < minWeight) {
-              minWeight = weight;
-              minEdge = { node1: visitedNode, node2: neighbor, weight };
-            }
+          if (visited.has(neighbor)) {
+            continue;
+          }
+          const weight = node.getWeight(neighbor);
+          if (weight && weight < minimum) {
+            minimum = weight;
+            nodeA = node;
+            nodeB = neighbor;
           }
         }
       }
-
-      if (minEdge) {
-        const { node1, node2, weight } = minEdge;
-        result.addGNode(node1);
-        result.addGNode(node2);
-        result.addEdge(node1.data, node2.data, weight);
-        visited.add(node2);
+      if (nodeA && nodeB) {
+        result.addEdge(nodeA.data, nodeB.data, minimum);
+        visited.add(nodeB);
       }
     }
 
