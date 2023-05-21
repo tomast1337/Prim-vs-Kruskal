@@ -3,21 +3,35 @@ import { Graph } from "./graph";
 import { GNode } from "./node";
 
 export class KruskalAlgorithm<T> {
-  public find(parents: Map<GNode<T>, GNode<T>>, node: GNode<T>): GNode<T> {
+  private find(parents: Map<GNode<T>, GNode<T>>, node: GNode<T>): GNode<T> {
     if (parents.get(node) === node) {
       return node;
     }
     return this.find(parents, parents.get(node)!);
   }
 
-  public union(
+  private union(
     parents: Map<GNode<T>, GNode<T>>,
     node1: GNode<T>,
     node2: GNode<T>
-  ) {
+  ): void {
     const root1 = this.find(parents, node1);
     const root2 = this.find(parents, node2);
     parents.set(root2, root1);
+  }
+
+  private getSortedEdges(graph: Graph<T>): Edge<T>[] {
+    const edges: Edge<T>[] = [];
+
+    for (const node of graph.getNodes()) {
+      for (const neighbor of node.getNeighbors()) {
+        const weight = node.getWeight(neighbor) || 0;
+        edges.push({ node1: node, node2: neighbor, weight });
+      }
+    }
+
+    edges.sort((a, b) => a.weight - b.weight);
+    return edges;
   }
 
   public kruskalMST(graph: Graph<T>): Graph<T> {
@@ -42,20 +56,6 @@ export class KruskalAlgorithm<T> {
     }
 
     return result;
-  }
-
-  public getSortedEdges(graph: Graph<T>): Edge<T>[] {
-    const edges: Edge<T>[] = [];
-
-    for (const node of graph.getNodes()) {
-      for (const neighbor of node.getNeighbors()) {
-        const weight = node.getWeight(neighbor) || 0;
-        edges.push({ node1: node, node2: neighbor, weight });
-      }
-    }
-
-    edges.sort((a, b) => a.weight - b.weight);
-    return edges;
   }
 }
 

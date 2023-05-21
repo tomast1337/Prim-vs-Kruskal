@@ -7,6 +7,11 @@ export class PrimAlgorithm<T> {
     const result = new Graph<T>();
     const visited = new Set<GNode<T>>();
 
+    // Check if the graph is empty
+    if (graph.getNodes().length === 0) {
+      return result;
+    }
+
     // Pick a starting node
     const startNode = graph.getNodes()[0];
     visited.add(startNode);
@@ -30,8 +35,8 @@ export class PrimAlgorithm<T> {
 
       if (minEdge) {
         const { node1, node2, weight } = minEdge;
-        result.addNode(node1.data);
-        result.addNode(node2.data);
+        result.addGNode(node1);
+        result.addGNode(node2);
         result.addEdge(node1.data, node2.data, weight);
         visited.add(node2);
       }

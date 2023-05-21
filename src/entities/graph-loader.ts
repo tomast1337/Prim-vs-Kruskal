@@ -2,7 +2,7 @@ import * as fs from "fs";
 import { Graph } from "./graph";
 
 export class GraphLoader {
-  public loadFromText(text: string): Graph<string> | null {
+  public loadFromText(text: string): Graph<string> {
     try {
       const lines = text.split("\n");
 
@@ -19,17 +19,15 @@ export class GraphLoader {
       }
       return graph;
     } catch (error) {
-      console.error("Error Parsing Graph:", error);
-      return null;
+      throw new Error(`Error loading graph from text: ${error}`);
     }
   }
-  public loadFromFile(filePath: string): Graph<string> | null {
+  public loadFromFile(filePath: string): Graph<string> {
     try {
       const text = fs.readFileSync(filePath, "utf8");
       return this.loadFromText(text);
     } catch (error) {
-      console.error("Error loading graph from file:", error);
-      return null;
+      throw new Error(`Error loading file ${filePath}: ${error}`);
     }
   }
 }

@@ -9,26 +9,34 @@ import {
   example as exampleGraphLoader,
   GraphLoader,
 } from "./entities/graph-loader";
-import { example as exampleKruskalAlgorithm } from "./entities/kruskal-algorithm";
-import { example as examplePrimAlgorithm } from "./entities/prim-algorithm";
+import {
+  example as exampleKruskalAlgorithm,
+  KruskalAlgorithm,
+} from "./entities/kruskal-algorithm";
+import {
+  example as examplePrimAlgorithm,
+  PrimAlgorithm,
+} from "./entities/prim-algorithm";
 
 // get run parameters
-
 const args = process.argv.slice(2); // remove first two arguments (node and index.js)
-
-// get -seed argument
 
 //if has -debug flag, run example code
 if (args.includes("-debug")) {
-  exampleEdge();
-  exampleNode();
-  exampleGraph();
+  try {
+    exampleEdge();
+    exampleNode();
+    exampleGraph();
 
-  exampleKruskalAlgorithm();
-  examplePrimAlgorithm();
+    exampleKruskalAlgorithm();
+    examplePrimAlgorithm();
 
-  exampleGraphDrawer();
-  exampleGraphLoader();
+    exampleGraphDrawer();
+    exampleGraphLoader();
+  } catch (error) {
+    console.log(`Error running example code: ${error}`);
+    process.exit(1);
+  }
   // exit process
   process.exit(0);
 }
@@ -37,8 +45,6 @@ if (args.includes("-debug")) {
 if (args.includes("-file")) {
   const filePath = args[args.indexOf("-file") + 1];
   const graphLoader = new GraphLoader();
-  const loadedGraph = graphLoader.loadFromFile(filePath);
-  console.log(`Successfully loaded graph from file ${filePath}`);
 
   const seedIndex = args.indexOf("-seed");
   let seed = "undefined";
@@ -46,13 +52,29 @@ if (args.includes("-file")) {
     seed = args[seedIndex + 1];
   }
 
-  if (loadedGraph) {
-    const graphDrawer = new GraphDrawer<string>(1000, 1000, seed);
-    const path = `${filePath.split("/")[filePath.split("/").length - 1]}-${
+  try {
+    const loadedGraph = graphLoader.loadFromFile(filePath);
+    console.log(`Successfully loaded graph from file ${filePath}`);
+    let path = `${filePath.split("/")[filePath.split("/").length - 1]}-${
       new Date().toISOString().split("T")[0]
     }.svg`;
-    graphDrawer.drawGraph(loadedGraph).save(path);
-    console.log(`Successfully saved graph to file ${path}`);
+    new GraphDrawer<string>(1000, 1000, seed).drawGraph(loadedGraph).save(path);
+    console.log(`Saved graph to ${path}`);
+
+    path = "kruskal-" + path;
+    const kruskalAlgorithm = new KruskalAlgorithm<string>();
+    const kruskalMST = kruskalAlgorithm.kruskalMST(loadedGraph);
+    new GraphDrawer<string>(1000, 1000, seed).drawGraph(kruskalMST).save(path);
+    console.log(`Saved graph to ${path}`);
+
+    path = "prim-" + path;
+    const primAlgorithm = new PrimAlgorithm<string>();
+    const primMST = primAlgorithm.primMST(loadedGraph);
+    new GraphDrawer<string>(1000, 1000, seed).drawGraph(primMST).save(path);
+    console.log(`Saved graph to ${path}`);
+  } catch (error) {
+    console.log(`Error loading file ${filePath}: ${error}`);
+    process.exit(1);
   }
   process.exit(0);
 }
@@ -66,4 +88,8 @@ Options:
     -file       Provide file path to load graph from
     -help       Print help
 `);
-process.exit(0);
+if (args.includes("-help")) {
+  process.exit(0);
+} else {
+  process.exit(1);
+}

@@ -12,6 +12,10 @@ export class Graph<T> {
     this.nodes.set(data, newNode);
   }
 
+  public addGNode(node: GNode<T>) {
+    this.nodes.set(node.data, node);
+  }
+
   public removeNode(data: T) {
     const nodeToRemove = this.nodes.get(data);
     if (nodeToRemove) {
